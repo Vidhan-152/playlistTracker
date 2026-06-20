@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from '../api/client'
 import VideoItem from './VideoItem'
 
-export default function PlaylistDetail({ playlistId, onDeleted }) {
+export default function PlaylistDetail({ playlistId, onDeleted, colors }) {
     const [playlist, setPlaylist] = useState(null)
     const [loading, setLoading] = useState(true)
     const [syncing, setSyncing] = useState(false)
@@ -49,11 +49,11 @@ export default function PlaylistDetail({ playlistId, onDeleted }) {
     }
 
     if (loading) return (
-        <div style={s.center}>
+        <div style={{ ...s.center, background: colors.bg }}>
             <div style={s.spinner} />
         </div>
     )
-    if (error) return <div style={s.center}><p style={{ color: '#ee6c4d' }}>{error}</p></div>
+    if (error) return <div style={{ ...s.center, background: colors.bg }}><p style={{ color: '#ee6c4d' }}>{error}</p></div>
     if (!playlist) return null
 
     const { stats } = playlist

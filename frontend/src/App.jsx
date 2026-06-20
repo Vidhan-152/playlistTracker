@@ -8,7 +8,17 @@ export default function App() {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
     const [selectedPlaylistId, setSelectedPlaylistId] = useState(null)
-    const [authMode, setAuthMode] = useState('login') // 'login' or 'register'
+    const [authMode, setAuthMode] = useState('login')
+
+    const [theme, setTheme] = useState(
+        () => localStorage.getItem('theme') || 'light'
+    )
+
+    useEffect(() => {
+        localStorage.setItem('theme', theme)
+    }, [theme])
+
+    const colors = themes[theme]
 
     useEffect(() => {
         axios.get('/api/auth/me')
@@ -17,40 +27,115 @@ export default function App() {
             .finally(() => setLoading(false))
     }, [])
 
-    if (loading) return (
-        <div style={s.center}>
-            <div style={s.spinner} />
-        </div>
-    )
+    if (loading) {
+        return (
+            <div
+                style={{
+                    ...s.center,
+                    background: colors.bg
+                }}
+            >
+                <div style={s.spinner} />
+            </div>
+        )
+    }
 
-    if (!user) return (
-        <div style={s.center}>
-            {authMode === 'login'
-                ? <LoginForm onSuccess={setUser} onSwitch={() => setAuthMode('register')} />
-                : <RegisterForm onSwitch={() => setAuthMode('login')} />
-            }
-        </div>
-    )
+    if (!user) {
+        return (
+            <div
+                style={{
+                    ...s.center,
+                    background: colors.bg
+                }}
+            >
+                {authMode === 'login' ? (
+                    <LoginForm
+                        colors={colors}
+                        onSuccess={setUser}
+                        onSwitch={() => setAuthMode('register')}
+                    />
+                ) : (
+                    <RegisterForm
+                        colors={colors}
+                        onSwitch={() => setAuthMode('login')}
+                    />
+                )}
+
+                <button
+                    onClick={() =>
+                        setTheme(
+                            theme === 'light'
+                                ? 'dark'
+                                : 'light'
+                        )
+                    }
+                    style={{
+                        position: 'fixed',
+                        top: 20,
+                        right: 20,
+                        padding: '10px 14px',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        fontSize: '18px'
+                    }}
+                >
+                    {theme === 'light' ? '🌙' : '☀️'}
+                </button>
+            </div>
+        )
+    }
 
     return (
         <div style={s.layout}>
             <Sidebar
                 user={user}
+                colors={colors}
                 selectedPlaylistId={selectedPlaylistId}
                 onSelectPlaylist={setSelectedPlaylistId}
                 onLogout={() => setUser(null)}
             />
-            <main style={s.main}>
-                {selectedPlaylistId
-                    ? <PlaylistDetail playlistId={selectedPlaylistId} />
-                    : <Empty />
-                }
+
+            <main
+                style={{
+                    ...s.main,
+                    background: colors.bg,
+                    position: 'relative'
+                }}
+            >
+                <button
+                    onClick={() =>
+                        setTheme(
+                            theme === 'light'
+                                ? 'dark'
+                                : 'light'
+                        )
+                    }
+                    style={{
+                        position: 'absolute',
+                        top: 20,
+                        right: 20,
+                        padding: '10px 14px',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        zIndex: 1000
+                    }}
+                >
+                    {theme === 'light' ? '🌙' : '☀️'}
+                </button>
+
+                {selectedPlaylistId ? (
+                    <PlaylistDetail playlistId={selectedPlaylistId} colors = {colors} />
+                ) : (
+                    <Empty />
+                )}
             </main>
         </div>
     )
 }
 
-function LoginForm({ onSuccess, onSwitch }) {
+function LoginForm({ onSuccess, onSwitch, colors }) {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState(null)
@@ -67,10 +152,10 @@ function LoginForm({ onSuccess, onSwitch }) {
     }
 
     return (
-        <div style={s.card}>
+        <div style={{...s.card, background: colors.card, color: colors.text}}>
             <div style={s.loginLogo}>📚</div>
-            <h1 style={s.loginTitle}>Playlist Tracker</h1>
-            <p style={s.loginSub}>Your personal YouTube learning dashboard</p>
+            <h1 style={{...s.loginTitle, color: colors.text}}>Playlist Tracker</h1>
+            <p style={{...s.loginSub, color: colors.secondary}}>Your personal YouTube learning dashboard</p>
 
             <div style={s.form}>
                 <input
@@ -107,7 +192,7 @@ function LoginForm({ onSuccess, onSwitch }) {
     )
 }
 
-function RegisterForm({ onSwitch }) {
+function RegisterForm({ onSwitch, colors }) {
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -126,7 +211,7 @@ function RegisterForm({ onSwitch }) {
     }
 
     if (success) return (
-        <div style={s.card}>
+        <div style={{...s.card, background: colors.card, color: colors.text}}>
             <div style={s.loginLogo}>✅</div>
             <h2 style={s.loginTitle}>Account created!</h2>
             <p style={s.loginSub}>You can now sign in.</p>
@@ -135,35 +220,35 @@ function RegisterForm({ onSwitch }) {
     )
 
     return (
-        <div style={s.card}>
+        <div style={{...s.card, background: colors.card, color: colors.text}}>
             <div style={s.loginLogo}>📚</div>
-            <h1 style={s.loginTitle}>Create Account</h1>
-            <p style={s.loginSub}>Start tracking your playlists</p>
+            <h1 style={{...s.loginTitle, color: colors.text}}>Create Account</h1>
+            <p style={{...s.loginSub, color: colors.secondary}}>Start tracking your playlists</p>
 
             <div style={s.form}>
                 <input
-                    style={s.input}
+                    style={{...s.input, background: colors.inputBg, color: colors.text}}
                     type="text"
                     placeholder="Your name"
                     value={name}
                     onChange={e => setName(e.target.value)}
                 />
                 <input
-                    style={s.input}
+                    style={{...s.input, background: colors.inputBg, color: colors.text}}
                     type="email"
                     placeholder="Email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                 />
                 <input
-                    style={s.input}
+                    style={{...s.input, background: colors.inputBg, color: colors.text}}
                     type="password"
                     placeholder="Password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleRegister()}
                 />
-                {error && <p style={s.error}>{error}</p>}
+                {error && <p style={{...s.error, color: colors.error}}>{error}</p>}
                 <button
                     style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}
                     onClick={handleRegister}
@@ -173,9 +258,9 @@ function RegisterForm({ onSwitch }) {
                 </button>
             </div>
 
-            <p style={s.switchText}>
+            <p style={{...s.switchText, color: colors.text}}>
                 Already have an account?{' '}
-                <span style={s.switchLink} onClick={onSwitch}>Sign In</span>
+                <span style={{...s.switchLink, color: colors.secondary}} onClick={onSwitch}>Sign In</span>
             </p>
         </div>
     )
@@ -188,6 +273,28 @@ function Empty() {
             <p style={s.emptyText}>Select a playlist from the sidebar to get started</p>
         </div>
     )
+}
+
+const themes = {
+    light: {
+        bg: '#e0fbfc',
+        card: '#ffffff',
+        text: '#293241',
+        secondary: '#3d5a80',
+        inputBg: '#f8feff',
+        border: 'rgba(152,193,217,0.6)',
+        button: '#3d5a80',
+    },
+
+    dark: {
+        bg: '#0f172a',
+        card: '#1e293b',
+        text: '#f8fafc',
+        secondary: '#94a3b8',
+        inputBg: '#334155',
+        border: '#475569',
+        button: '#2563eb',
+    }
 }
 
 const s = {
