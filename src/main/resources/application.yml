@@ -1,41 +1,37 @@
 spring:
   config:
     import: optional:application-secrets.yml
-
   datasource:
-    url: jdbc:postgresql://localhost:5432/playlist_tracker
-    username: postgres
-    password: postgres   # change if your local Postgres password differs
-
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/playlist_tracker}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
   jpa:
     hibernate:
-      ddl-auto: update     # auto-creates/updates tables from entities (fine for dev, never for prod)
-    show-sql: true          # logs SQL to console — helpful while learning, turn off later if noisy
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
-
+        format_sql: false
   security:
     oauth2:
       client:
         registration:
           google:
-            client-id: ${google.client-id}
-            client-secret: ${google.client-secret}
+            client-id: ${GOOGLE_CLIENT_ID:${google.client-id}}
+            client-secret: ${GOOGLE_CLIENT_SECRET:${google.client-secret}}
             scope:
               - email
               - profile
 
-
-  logging:
-    level:
-      com.vidhan152.playlistTracker: DEBUG
-      org.springframework.web.client: WARN
+logging:
+  level:
+    com.vidhan152.playlistTracker: INFO
+    org.springframework.web.client: WARN
 
 youtube:
   api:
-    key: ${google.youtube-api-key}
+    key: ${GOOGLE_YOUTUBE_API_KEY:${google.youtube-api-key}}
     base-url: https://www.googleapis.com/youtube/v3
 
 server:
-  port: 8080
+  port: ${PORT:8080}
