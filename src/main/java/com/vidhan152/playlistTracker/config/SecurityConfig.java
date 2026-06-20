@@ -30,7 +30,9 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo ->
                                 userInfo.userService(customOAuth2UserService)
                         )
-                        .defaultSuccessUrl("https://tracktube.vercel.app", true)
+                        .successHandler((request, response, authentication) -> {
+                            response.sendRedirect("https://tracktube.vercel.app");
+                        })
                 )
                 .csrf(csrf -> csrf.disable());
 
