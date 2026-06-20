@@ -42,16 +42,14 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://tracktube.vercel.app"  // replace with your actual Vercel URL after deployment
+                "https://tracktube.vercel.app"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
-        return source -> {
-            UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
-            s.registerCorsConfiguration("/**", config);
-            // return the actual source bean
-            return null;
-        };
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }
