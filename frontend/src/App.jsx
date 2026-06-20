@@ -5,73 +5,207 @@ import PlaylistDetail from './components/PlaylistDetail'
 import './App.css'
 
 export default function App() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState(null)
+    const [user, setUser] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [selectedPlaylistId, setSelectedPlaylistId] = useState(null)
+    const [authMode, setAuthMode] = useState('login') // 'login' or 'register'
 
-  useEffect(() => {
-    axios.get('/api/auth/me', { withCredentials: true })
-        .then(res => setUser(res.data))
-        .catch(() => setUser(null))
-        .finally(() => setLoading(false))
-  }, [])
+    useEffect(() => {
+        axios.get('/api/auth/me')
+            .then(res => setUser(res.data))
+            .catch(() => setUser(null))
+            .finally(() => setLoading(false))
+    }, [])
 
-  if (loading) return (
-      <div style={s.center}>
-        <div style={s.spinner} />
-      </div>
-  )
-
-  if (!user) return (
-      <div style={s.center}>
-        <div style={s.loginCard}>
-          <div style={s.loginLogo}>📚</div>
-          <h1 style={s.loginTitle}>Playlist Tracker</h1>
-          <p style={s.loginSub}>Your personal YouTube learning dashboard</p>
-            <a href={`${import.meta.env.VITE_API_BASE_URL || ''}/oauth2/authorization/google`} style={s.loginBtn}>
-            Sign in with Google
-          </a>
+    if (loading) return (
+        <div style={s.center}>
+            <div style={s.spinner} />
         </div>
-      </div>
-  )
+    )
 
-  return (
-      <div style={s.layout}>
-        <Sidebar
-            user={user}
-            selectedPlaylistId={selectedPlaylistId}
-            onSelectPlaylist={setSelectedPlaylistId}
-        />
-        <main style={s.main}>
-          {selectedPlaylistId
-              ? <PlaylistDetail playlistId={selectedPlaylistId} onDeleted={() => setSelectedPlaylistId(null)} />
-              : <Empty />
-          }
-        </main>
-      </div>
-  )
+    if (!user) return (
+        <div style={s.center}>
+            {authMode === 'login'
+                ? <LoginForm onSuccess={setUser} onSwitch={() => setAuthMode('register')} />
+                : <RegisterForm onSwitch={() => setAuthMode('login')} />
+            }
+        </div>
+    )
+
+    return (
+        <div style={s.layout}>
+            <Sidebar
+                user={user}
+                selectedPlaylistId={selectedPlaylistId}
+                onSelectPlaylist={setSelectedPlaylistId}
+                onLogout={() => setUser(null)}
+            />
+            <main style={s.main}>
+                {selectedPlaylistId
+                    ? <PlaylistDetail playlistId={selectedPlaylistId} />
+                    : <Empty />
+                }
+            </main>
+        </div>
+    )
+}
+
+function LoginForm({ onSuccess, onSwitch }) {
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [error, setError] = useState(null)
+    const [loading, setLoading] = useState(false)
+
+    function handleLogin() {
+        if (!email || !password) return
+        setLoading(true)
+        setError(null)
+        axios.post('/api/auth/login', { email, password })
+            .then(res => onSuccess(res.data))
+            .catch(err => setError(err.response?.data?.message || 'Login failed'))
+            .finally(() => setLoading(false))
+    }
+
+    return (
+        <div style={s.card}>
+            <div style={s.loginLogo}>📚</div>
+            <h1 style={s.loginTitle}>Playlist Tracker</h1>
+            <p style={s.loginSub}>Your personal YouTube learning dashboard</p>
+
+            <div style={s.form}>
+                <input
+                    style={s.input}
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                />
+                <input
+                    style={s.input}
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                />
+                {error && <p style={s.error}>{error}</p>}
+                <button
+                    style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}
+                    onClick={handleLogin}
+                    disabled={loading}
+                >
+                    {loading ? 'Signing in...' : 'Sign In'}
+                </button>
+            </div>
+
+            <p style={s.switchText}>
+                Don't have an account?{' '}
+                <span style={s.switchLink} onClick={onSwitch}>Register</span>
+            </p>
+        </div>
+    )
+}
+
+function RegisterForm({ onSwitch }) {
+    const [name, setName] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [error, setError] = useState(null)
+    const [success, setSuccess] = useState(false)
+    const [loading, setLoading] = useState(false)
+
+    function handleRegister() {
+        if (!name || !email || !password) return
+        setLoading(true)
+        setError(null)
+        axios.post('/api/auth/register', { name, email, password })
+            .then(() => setSuccess(true))
+            .catch(err => setError(err.response?.data?.message || 'Registration failed'))
+            .finally(() => setLoading(false))
+    }
+
+    if (success) return (
+        <div style={s.card}>
+            <div style={s.loginLogo}>✅</div>
+            <h2 style={s.loginTitle}>Account created!</h2>
+            <p style={s.loginSub}>You can now sign in.</p>
+            <button style={s.btn} onClick={onSwitch}>Go to Login</button>
+        </div>
+    )
+
+    return (
+        <div style={s.card}>
+            <div style={s.loginLogo}>📚</div>
+            <h1 style={s.loginTitle}>Create Account</h1>
+            <p style={s.loginSub}>Start tracking your playlists</p>
+
+            <div style={s.form}>
+                <input
+                    style={s.input}
+                    type="text"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                />
+                <input
+                    style={s.input}
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                />
+                <input
+                    style={s.input}
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleRegister()}
+                />
+                {error && <p style={s.error}>{error}</p>}
+                <button
+                    style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}
+                    onClick={handleRegister}
+                    disabled={loading}
+                >
+                    {loading ? 'Creating...' : 'Create Account'}
+                </button>
+            </div>
+
+            <p style={s.switchText}>
+                Already have an account?{' '}
+                <span style={s.switchLink} onClick={onSwitch}>Sign In</span>
+            </p>
+        </div>
+    )
 }
 
 function Empty() {
-  return (
-      <div style={s.empty}>
-        <div style={s.emptyIcon}>🎬</div>
-        <p style={s.emptyText}>Select a playlist from the sidebar to get started</p>
-      </div>
-  )
+    return (
+        <div style={s.empty}>
+            <div style={s.emptyIcon}>🎬</div>
+            <p style={s.emptyText}>Select a playlist from the sidebar to get started</p>
+        </div>
+    )
 }
 
 const s = {
-  center: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#e0fbfc' },
-  spinner: { width: '36px', height: '36px', border: '3px solid #98c1d9', borderTop: '3px solid #3d5a80', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
-  loginCard: { background: '#fff', borderRadius: '16px', padding: '56px 64px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', boxShadow: '0 4px 24px rgba(61,90,128,0.1)' },
-  loginLogo: { fontSize: '3rem' },
-  loginTitle: { fontSize: '1.8rem', fontWeight: 700, color: '#293241' },
-  loginSub: { color: '#3d5a80', fontSize: '0.95rem' },
-  loginBtn: { marginTop: '12px', padding: '12px 32px', borderRadius: '999px', background: '#3d5a80', color: '#fff', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none', transition: 'background 0.2s' },
-  layout: { display: 'flex', height: '100vh', overflow: 'hidden' },
-  main: { flex: 1, overflowY: 'auto', padding: '32px', background: '#e0fbfc' },
-  empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '16px', animation: 'fadeIn 0.4s ease' },
-  emptyIcon: { fontSize: '3rem' },
-  emptyText: { color: '#3d5a80', fontSize: '1rem', fontWeight: 500 },
+    center: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#e0fbfc' },
+    spinner: { width: '36px', height: '36px', border: '3px solid #98c1d9', borderTop: '3px solid #3d5a80', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
+    card: { background: '#fff', borderRadius: '16px', padding: '48px 56px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', boxShadow: '0 4px 24px rgba(61,90,128,0.1)', minWidth: '360px' },
+    loginLogo: { fontSize: '2.5rem' },
+    loginTitle: { fontSize: '1.6rem', fontWeight: 700, color: '#293241' },
+    loginSub: { color: '#3d5a80', fontSize: '0.9rem', marginBottom: '4px' },
+    form: { display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: '8px' },
+    input: { width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1px solid rgba(152,193,217,0.6)', background: '#f8feff', color: '#293241', fontSize: '0.9rem', outline: 'none' },
+    error: { color: '#ee6c4d', fontSize: '0.82rem', textAlign: 'left' },
+    btn: { padding: '12px', borderRadius: '999px', border: 'none', background: '#3d5a80', color: '#fff', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', transition: 'background 0.2s' },
+    switchText: { fontSize: '0.82rem', color: '#3d5a80', marginTop: '4px' },
+    switchLink: { color: '#ee6c4d', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' },
+    layout: { display: 'flex', height: '100vh', overflow: 'hidden' },
+    main: { flex: 1, overflowY: 'auto', padding: '32px', background: '#e0fbfc' },
+    empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '16px' },
+    emptyIcon: { fontSize: '3rem' },
+    emptyText: { color: '#3d5a80', fontSize: '1rem', fontWeight: 500 },
 }

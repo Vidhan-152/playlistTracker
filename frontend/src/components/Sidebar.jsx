@@ -8,7 +8,7 @@ function getGreeting() {
     return 'Good Evening'
 }
 
-export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist }) {
+export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist, onLogout }) {
     const [playlists, setPlaylists] = useState([])
     const [loading, setLoading] = useState(true)
     const [url, setUrl] = useState('')
@@ -21,7 +21,7 @@ export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist }) 
 
     function fetchPlaylists() {
         setLoading(true)
-        axios.get('/api/playlists', { withCredentials: true })
+        axios.get('/api/playlists')
             .then(res => setPlaylists(res.data))
             .catch(() => setError('Failed to load'))
             .finally(() => setLoading(false))
@@ -31,7 +31,7 @@ export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist }) 
         if (!url.trim()) return
         setAdding(true)
         setError(null)
-        axios.post('/api/playlists', { playlistUrl: url }, { withCredentials: true })
+        axios.post('/api/playlists', { playlistUrl: url })
             .then(res => {
                 setPlaylists(prev => [...prev, res.data])
                 onSelectPlaylist(res.data.id)
@@ -44,13 +44,18 @@ export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist }) 
     function handleDelete(e, id) {
         e.stopPropagation()
         setDeletingId(id)
-        axios.delete(`/api/playlists/${id}`, { withCredentials: true })
+        axios.delete(`/api/playlists/${id}`)
             .then(() => {
                 setPlaylists(prev => prev.filter(p => p.id !== id))
                 if (selectedPlaylistId === id) onSelectPlaylist(null)
             })
             .catch(() => setError('Failed to delete'))
             .finally(() => setDeletingId(null))
+    }
+
+    function handleLogout() {
+        axios.post('/api/auth/logout')
+            .finally(() => onLogout())
     }
 
     const firstName = (user.name || user.email || '').split(' ')[0]
@@ -60,17 +65,17 @@ export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist }) 
             {/* User section */}
             <div style={s.userSection}>
                 <div style={s.avatarWrap}>
-                    {user.picture
-                        ? <img src={user.picture} alt="" style={s.avatar} />
-                        : <div style={s.avatarFallback}>{firstName[0]}</div>
-                    }
+                    <div style={s.avatarFallback}>{firstName[0].toUpperCase()}</div>
                     <div style={s.onlineDot} />
                 </div>
-                <div style={{ animation: 'fadeUp 0.4s ease' }}>
+                <div style={{ animation: 'fadeUp 0.4s ease', flex: 1, minWidth: 0 }}>
                     <p style={s.greeting}>{getGreeting()}, {firstName} 👋</p>
                     <p style={s.userName}>{user.name || user.email}</p>
                     <p style={s.userSub}>Ready to learn today?</p>
                 </div>
+                <button style={s.logoutBtn} onClick={handleLogout} title="Logout">
+                    ⏻
+                </button>
             </div>
 
             {/* Playlist list */}
@@ -178,7 +183,6 @@ const s = {
         display: 'flex', alignItems: 'center', gap: '14px',
     },
     avatarWrap: { position: 'relative', flexShrink: 0 },
-    avatar: { width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e0fbfc' },
     avatarFallback: {
         width: '48px', height: '48px', borderRadius: '50%',
         background: '#3d5a80', color: '#fff',
@@ -191,8 +195,14 @@ const s = {
         background: '#4ade80', border: '2px solid #fff',
     },
     greeting: { fontSize: '0.82rem', fontWeight: 500, color: '#3d5a80' },
-    userName: { fontSize: '1rem', fontWeight: 700, color: '#293241', marginTop: '1px' },
+    userName: { fontSize: '1rem', fontWeight: 700, color: '#293241', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     userSub: { fontSize: '0.72rem', color: '#98c1d9', marginTop: '2px' },
+    logoutBtn: {
+        flexShrink: 0, background: 'none', border: '1px solid rgba(152,193,217,0.4)',
+        borderRadius: '8px', padding: '6px 8px', cursor: 'pointer',
+        color: '#3d5a80', fontSize: '16px', lineHeight: 1,
+        transition: 'all 0.2s',
+    },
     listSection: {
         flex: 1, display: 'flex', flexDirection: 'column',
         padding: '20px 12px 8px', overflow: 'hidden',
