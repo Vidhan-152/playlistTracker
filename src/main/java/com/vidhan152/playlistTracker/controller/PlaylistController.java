@@ -9,7 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,31 +25,31 @@ public class PlaylistController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PlaylistDetailResponse addPlaylist(@Valid @RequestBody AddPlaylistRequest request,
-                                              @AuthenticationPrincipal OAuth2User principal) {
-        return playlistService.addPlaylist(request, currentUserResolver.resolve(principal));
+                                              @AuthenticationPrincipal UserDetails userDetails) {
+        return playlistService.addPlaylist(request, currentUserResolver.resolve(userDetails));
     }
 
     @GetMapping
-    public List<PlaylistSummaryResponse> getPlaylists(@AuthenticationPrincipal OAuth2User principal) {
-        return playlistService.getPlaylistsForUser(currentUserResolver.resolve(principal));
+    public List<PlaylistSummaryResponse> getPlaylists(@AuthenticationPrincipal UserDetails userDetails) {
+        return playlistService.getPlaylistsForUser(currentUserResolver.resolve(userDetails));
     }
 
     @GetMapping("/{id}")
     public PlaylistDetailResponse getPlaylistDetail(@PathVariable Long id,
-                                                    @AuthenticationPrincipal OAuth2User principal) {
-        return playlistService.getPlaylistDetail(id, currentUserResolver.resolve(principal));
+                                                    @AuthenticationPrincipal UserDetails userDetails) {
+        return playlistService.getPlaylistDetail(id, currentUserResolver.resolve(userDetails));
     }
 
     @PostMapping("/{id}/sync")
     public PlaylistDetailResponse syncPlaylist(@PathVariable Long id,
-                                               @AuthenticationPrincipal OAuth2User principal) {
-        return playlistService.syncPlaylist(id, currentUserResolver.resolve(principal));
+                                               @AuthenticationPrincipal UserDetails userDetails) {
+        return playlistService.syncPlaylist(id, currentUserResolver.resolve(userDetails));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deletePlaylist(@PathVariable Long id,
-                               @AuthenticationPrincipal OAuth2User principal) {
-        playlistService.deletePlaylist(id, currentUserResolver.resolve(principal));
+                               @AuthenticationPrincipal UserDetails userDetails) {
+        playlistService.deletePlaylist(id, currentUserResolver.resolve(userDetails));
     }
 }

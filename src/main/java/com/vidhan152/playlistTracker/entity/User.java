@@ -21,14 +21,12 @@ public class User {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String googleId;
-
-    @Column(nullable = false, unique = true)
     private String email;
 
-    private String name;
+    @Column(nullable = false)
+    private String passwordHash;
 
-    private String pictureUrl;
+    private String name;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
