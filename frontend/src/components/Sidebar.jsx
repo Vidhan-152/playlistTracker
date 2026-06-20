@@ -8,7 +8,7 @@ function getGreeting() {
     return 'Good Evening'
 }
 
-export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist, onLogout }) {
+export default function Sidebar({ user, colors, selectedPlaylistId, onSelectPlaylist, onLogout }) {
     const [playlists, setPlaylists] = useState([])
     const [loading, setLoading] = useState(true)
     const [url, setUrl] = useState('')
@@ -61,7 +61,7 @@ export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist, on
     const firstName = (user.name || user.email || '').split(' ')[0]
 
     return (
-        <aside style={s.sidebar}>
+        <aside style={{ ...s.sidebar, background: colors.card, borderRight: `1px solid ${colors.border}` }}>
             {/* User section */}
             <div style={s.userSection}>
                 <div style={s.avatarWrap}>
@@ -69,22 +69,22 @@ export default function Sidebar({ user, selectedPlaylistId, onSelectPlaylist, on
                     <div style={s.onlineDot} />
                 </div>
                 <div style={{ animation: 'fadeUp 0.4s ease', flex: 1, minWidth: 0 }}>
-                    <p style={s.greeting}>{getGreeting()}, {firstName} 👋</p>
-                    <p style={s.userName}>{user.name || user.email}</p>
-                    <p style={s.userSub}>Ready to learn today?</p>
+                    <p style={{...s.greeting, color: colors.text}}>{getGreeting()}, {firstName} 👋</p>
+                    <p style={{...s.userName, color: colors.text}}>{user.name || user.email}</p>
+                    <p style={{...s.userSub, color: colors.secondary}}>Ready to learn today?</p>
                 </div>
-                <button style={s.logoutBtn} onClick={handleLogout} title="Logout">
+                <button style={{...s.logoutBtn, background: colors.logoutBtn}} onClick={handleLogout} title="Logout">
                     ⏻
                 </button>
             </div>
 
             {/* Playlist list */}
             <div style={s.listSection}>
-                <p style={s.sectionLabel}>My Playlists</p>
+                <p style={{...s.sectionLabel, color: colors.text}}>My Playlists</p>
                 <div style={s.listScroll}>
                     {loading && <SkeletonList />}
                     {!loading && playlists.length === 0 && (
-                        <p style={s.emptyMsg}>No playlists yet. Add one below.</p>
+                        <p style={{...s.emptyMsg, color: colors.text}}>No playlists yet. Add one below.</p>
                     )}
                     {playlists.map((pl, i) => {
                         const isActive = selectedPlaylistId === pl.id
