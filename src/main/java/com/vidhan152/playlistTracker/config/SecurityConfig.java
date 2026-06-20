@@ -42,7 +42,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://playlist-tracker-theta.vercel.app"  // replace with your actual Vercel URL after deployment
+                "https://tracktube.vercel.app"  // replace with your actual Vercel URL after deployment
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
