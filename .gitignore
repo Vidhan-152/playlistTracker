@@ -14,7 +14,7 @@ target/
 .sts4-cache
 
 ### SECRET CODE ###
-application-secrets.yml
+**/application-secrets.yml
 
 ### IntelliJ IDEA ###
 .idea

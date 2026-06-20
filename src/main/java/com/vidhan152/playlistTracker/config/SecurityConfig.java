@@ -51,6 +51,7 @@ public class SecurityConfig {
             UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
             s.registerCorsConfiguration("/**", config);
             // return the actual source bean
+            return null;
         };
     }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import axios from './api/client'
 import Sidebar from './components/Sidebar'
 import PlaylistDetail from './components/PlaylistDetail'
 import './App.css'
@@ -28,7 +28,7 @@ export default function App() {
           <div style={s.loginLogo}>📚</div>
           <h1 style={s.loginTitle}>Playlist Tracker</h1>
           <p style={s.loginSub}>Your personal YouTube learning dashboard</p>
-          <a href="/oauth2/authorization/google" style={s.loginBtn}>
+            <a href={`${import.meta.env.VITE_API_BASE_URL || ''}/oauth2/authorization/google`} style={s.loginBtn}>
             Sign in with Google
           </a>
         </div>

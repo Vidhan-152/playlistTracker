@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import axios from '../api/client'
 import VideoItem from './VideoItem'
 
 export default function PlaylistDetail({ playlistId, onDeleted }) {
