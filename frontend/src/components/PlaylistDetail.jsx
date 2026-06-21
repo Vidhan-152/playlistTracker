@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from '../api/client'
 import VideoItem from './VideoItem'
 
-export default function PlaylistDetail({ playlistId, colors }) {
+export default function PlaylistDetail({ playlistId, colors, isMobile }) {
     const [playlist, setPlaylist] = useState(null)
     const [loading, setLoading] = useState(true)
     const [syncing, setSyncing] = useState(false)
@@ -50,7 +50,7 @@ export default function PlaylistDetail({ playlistId, colors }) {
 
     if (loading) return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh' }}>
-            <div style={{ width: '32px', height: '32px', border: `3px solid ${colors.mutedText}`, borderTop: `3px solid ${colors.button}`, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ width: '32px', height: '32px', border: `3px solid ${colors.mutedText}`, borderTop: `3px solid #3d5a80`, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         </div>
     )
     if (error) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh' }}><p style={{ color: '#ee6c4d' }}>{error}</p></div>
@@ -60,27 +60,23 @@ export default function PlaylistDetail({ playlistId, colors }) {
     const pct = stats.percentComplete
 
     return (
-        <div style={{ maxWidth: '860px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '28px', animation: 'fadeUp 0.3s ease' }}>
+        <div style={{ maxWidth: '860px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '28px', animation: 'fadeUp 0.3s ease' }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    {playlist.thumbnailUrl && (
-                        <img src={playlist.thumbnailUrl} alt="" style={{ width: '80px', height: '56px', borderRadius: '10px', objectFit: 'cover', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
+            <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                    {playlist.thumbnailUrl && !isMobile && (
+                        <img src={playlist.thumbnailUrl} alt="" style={{ width: '72px', height: '50px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
                     )}
-                    <div>
-                        <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: colors.text }}>{playlist.title}</h1>
-                        <p style={{ fontSize: '0.82rem', color: colors.metaText, marginTop: '4px', fontWeight: 500 }}>
-                            {stats.totalVideos} videos &nbsp;•&nbsp;
-                            {stats.completedVideos} completed &nbsp;•&nbsp;
-                            {playlist.lastSyncedAt
-                                ? `Synced ${new Date(playlist.lastSyncedAt).toLocaleDateString()}`
-                                : 'Never synced'}
+                    <div style={{ minWidth: 0 }}>
+                        <h1 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 700, color: colors.text, wordBreak: 'break-word' }}>{playlist.title}</h1>
+                        <p style={{ fontSize: '0.78rem', color: colors.metaText, marginTop: '3px' }}>
+                            {stats.totalVideos} videos • {stats.completedVideos} completed
                         </p>
                     </div>
                 </div>
                 <button
-                    style={{ padding: '9px 20px', borderRadius: '999px', border: `1px solid ${colors.border}`, background: colors.card, color: colors.text, fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', opacity: syncing ? 0.6 : 1 }}
+                    style={{ padding: '8px 16px', borderRadius: '999px', border: `1px solid ${colors.border}`, background: colors.card, color: colors.text, fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', opacity: syncing ? 0.6 : 1, whiteSpace: 'nowrap', flexShrink: 0 }}
                     onClick={handleSync} disabled={syncing}
                 >
                     {syncing ? '⟳ Syncing...' : '⟳ Sync'}
@@ -88,33 +84,27 @@ export default function PlaylistDetail({ playlistId, colors }) {
             </div>
 
             {/* Progress card */}
-            <div style={{ background: colors.progressCard, borderRadius: '14px', padding: '24px 28px', boxShadow: colors.videoShadow, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ background: colors.progressCard, borderRadius: '12px', padding: isMobile ? '16px' : '24px 28px', border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ flex: 1, height: '8px', background: colors.progressTrack, borderRadius: '999px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', background: '#3d5a80', borderRadius: '999px', width: `${pct}%`, transition: 'width 0.6s ease' }} />
                     </div>
                     <span style={{ fontSize: '0.9rem', fontWeight: 700, color: colors.metaText, minWidth: '40px', textAlign: 'right' }}>{pct}%</span>
                 </div>
-                <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
-                    <Stat icon="✓" value={`${stats.completedVideos} videos completed`} color={colors.metaText} />
-                    <Stat icon="⏱" value={`${formatDuration(stats.completedDurationSeconds)} watched`} color={colors.metaText} />
-                    <Stat icon="📚" value={`${pct}% completed`} color={colors.metaText} />
-                    <Stat icon="⏳" value={`${formatDuration(stats.remainingDurationSeconds)} remaining`} color={colors.metaText} />
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '8px' }}>
+                    <StatBox icon="✓" label="Completed" value={`${stats.completedVideos}/${stats.totalVideos}`} color={colors.metaText} bg={colors.inputBg} />
+                    <StatBox icon="⏱" label="Watched" value={formatDuration(stats.completedDurationSeconds)} color={colors.metaText} bg={colors.inputBg} />
+                    <StatBox icon="📚" label="Progress" value={`${pct}%`} color={colors.metaText} bg={colors.inputBg} />
+                    <StatBox icon="⏳" label="Remaining" value={formatDuration(stats.remainingDurationSeconds)} color={colors.metaText} bg={colors.inputBg} />
                 </div>
             </div>
 
             {/* Video list */}
             <div>
-                <h2 style={{ fontSize: '1rem', fontWeight: 700, color: colors.text, marginBottom: '12px', letterSpacing: '-0.01em' }}>Videos</h2>
+                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: colors.text, marginBottom: '10px' }}>Videos</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {playlist.videos.map((video, i) => (
-                        <VideoItem
-                            key={video.id}
-                            video={video}
-                            index={i}
-                            colors={colors}
-                            onToggle={handleProgressChange}
-                        />
+                        <VideoItem key={video.id} video={video} index={i} colors={colors} isMobile={isMobile} onToggle={handleProgressChange} />
                     ))}
                 </div>
             </div>
@@ -122,11 +112,11 @@ export default function PlaylistDetail({ playlistId, colors }) {
     )
 }
 
-function Stat({ icon, value, color }) {
+function StatBox({ icon, label, value, color, bg }) {
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px' }}>{icon}</span>
-            <span style={{ fontSize: '13px', fontWeight: 500, color }}>{value}</span>
+        <div style={{ background: bg, borderRadius: '8px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '11px', color, opacity: 0.7 }}>{icon} {label}</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, color }}>{value}</span>
         </div>
     )
 }

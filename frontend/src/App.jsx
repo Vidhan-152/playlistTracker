@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react'
 import axios from './api/client'
 import Sidebar from './components/Sidebar'
 import PlaylistDetail from './components/PlaylistDetail'
+import { useWindowSize } from './hooks/useWindowSize'
 import './App.css'
-import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
     const [selectedPlaylistId, setSelectedPlaylistId] = useState(null)
     const [authMode, setAuthMode] = useState('login')
+    const [sidebarOpen, setSidebarOpen] = useState(false)
+    const { isMobile } = useWindowSize()
 
     const [theme, setTheme] = useState(
         () => localStorage.getItem('theme') || 'light'
@@ -28,111 +30,118 @@ export default function App() {
             .finally(() => setLoading(false))
     }, [])
 
-    if (loading) {
-        return (
-            <div
-                style={{
-                    ...s.center,
-                    background: colors.bg
-                }}
-            >
-                <div style={s.spinner} />
-            </div>
-        )
+    // close sidebar when selecting playlist on mobile
+    function handleSelectPlaylist(id) {
+        setSelectedPlaylistId(id)
+        if (isMobile) setSidebarOpen(false)
     }
 
-    if (!user) {
-        return (
-            <div
-                style={{
-                    ...s.center,
-                    background: colors.bg
-                }}
-            >
-                {authMode === 'login' ? (
-                    <LoginForm
-                        colors={colors}
-                        onSuccess={setUser}
-                        onSwitch={() => setAuthMode('register')}
-                    />
-                ) : (
-                    <RegisterForm
-                        colors={colors}
-                        onSwitch={() => setAuthMode('login')}
-                    />
-                )}
+    if (loading) return (
+        <div style={{ ...s.center, background: colors.bg }}>
+            <div style={s.spinner} />
+        </div>
+    )
 
-                <button
-                    onClick={() =>
-                        setTheme(
-                            theme === 'light'
-                                ? 'dark'
-                                : 'light'
-                        )
-                    }
-                    style={{
-                        position: 'fixed',
-                        top: 20,
-                        right: 20,
-                        padding: '10px 14px',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        fontSize: '18px'
-                    }}
-                >
-                    {theme === 'light' ? '🌙' : '☀️'}
-                </button>
-            </div>
-        )
-    }
+    if (!user) return (
+        <div style={{ ...s.center, background: colors.bg }}>
+            {authMode === 'login'
+                ? <LoginForm colors={colors} onSuccess={setUser} onSwitch={() => setAuthMode('register')} />
+                : <RegisterForm colors={colors} onSwitch={() => setAuthMode('login')} />
+            }
+            <button
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                style={s.themeBtn}
+            >
+                {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+        </div>
+    )
 
     return (
-        <div style={s.layout}>
-            <Sidebar
-                user={user}
-                colors={colors}
-                selectedPlaylistId={selectedPlaylistId}
-                onSelectPlaylist={setSelectedPlaylistId}
-                onLogout={() => setUser(null)}
-            />
+        <div style={{ ...s.layout, background: colors.bg }}>
 
-            <main
-                style={{
-                    ...s.main,
-                    background: colors.bg,
-                    position: 'relative'
-                }}
-            >
-                <button
-                    onClick={() =>
-                        setTheme(
-                            theme === 'light'
-                                ? 'dark'
-                                : 'light'
-                        )
-                    }
-                    style={{
-                        position: 'absolute',
-                        top: 20,
-                        right: 20,
-                        padding: '10px 14px',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        zIndex: 1000
-                    }}
-                >
-                    {theme === 'light' ? '🌙' : '☀️'}
-                </button>
+            {/* Backdrop for mobile sidebar */}
+            {isMobile && sidebarOpen && (
+                <div
+                    style={s.backdrop}
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
-                {selectedPlaylistId ? (
-                    <PlaylistDetail playlistId={selectedPlaylistId} colors = {colors} />
-                ) : (
-                    <Empty />
+            {/* Sidebar */}
+            <div style={{
+                ...s.sidebarWrapper,
+                ...(isMobile ? {
+                    position: 'fixed',
+                    top: 0, left: 0,
+                    height: '100vh',
+                    zIndex: 200,
+                    transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+                    transition: 'transform 0.25s ease',
+                    boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.3)' : 'none',
+                } : {})
+            }}>
+                <Sidebar
+                    user={user}
+                    colors={colors}
+                    selectedPlaylistId={selectedPlaylistId}
+                    onSelectPlaylist={handleSelectPlaylist}
+                    onLogout={() => setUser(null)}
+                    isMobile={isMobile}
+                    onClose={() => setSidebarOpen(false)}
+                />
+            </div>
+
+            {/* Main content */}
+            <main style={{
+                ...s.main,
+                background: colors.bg,
+                marginLeft: isMobile ? 0 : '300px',
+            }}>
+                {/* Top bar on mobile */}
+                {isMobile && (
+                    <div style={{ ...s.topBar, background: colors.card, borderBottom: `1px solid ${colors.border}` }}>
+                        <button style={s.hamburger} onClick={() => setSidebarOpen(true)}>☰</button>
+                        <span style={{ fontWeight: 700, color: colors.text, fontSize: '1rem' }}>
+              {selectedPlaylistId ? '' : 'Playlist Tracker'}
+            </span>
+                        <button
+                            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                            style={s.themeBtn}
+                        >
+                            {theme === 'light' ? '🌙' : '☀️'}
+                        </button>
+                    </div>
                 )}
+
+                {/* Desktop theme toggle */}
+                {!isMobile && (
+                    <button
+                        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                        style={{ ...s.themeBtn, position: 'absolute', top: 20, right: 20, zIndex: 100 }}
+                    >
+                        {theme === 'light' ? '🌙' : '☀️'}
+                    </button>
+                )}
+
+                <div style={{ padding: isMobile ? '16px' : '32px', paddingTop: isMobile ? '8px' : '32px' }}>
+                    {selectedPlaylistId
+                        ? <PlaylistDetail playlistId={selectedPlaylistId} colors={colors} isMobile={isMobile} />
+                        : <Empty colors={colors} isMobile={isMobile} />
+                    }
+                </div>
             </main>
-            <Analytics />
+        </div>
+    )
+}
+
+function Empty({ colors, isMobile }) {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: isMobile ? '60vh' : '70vh', gap: '16px' }}>
+            <div style={{ fontSize: '3rem' }}>🎬</div>
+            <p style={{ color: colors.metaText, fontSize: '1rem', fontWeight: 500, textAlign: 'center' }}>
+                {isMobile ? 'Tap ☰ to select a playlist' : 'Select a playlist from the sidebar to get started'}
+            </p>
         </div>
     )
 }
@@ -154,41 +163,21 @@ function LoginForm({ onSuccess, onSwitch, colors }) {
     }
 
     return (
-        <div style={{...s.card, background: colors.card, color: colors.text}}>
-            <div style={s.loginLogo}>📚</div>
-            <h1 style={{...s.loginTitle, color: colors.text}}>Playlist Tracker</h1>
-            <p style={{...s.loginSub, color: colors.secondary}}>Your personal YouTube learning dashboard</p>
-
+        <div style={{ ...s.card, background: colors.card }}>
+            <div style={{ fontSize: '2.5rem' }}>📚</div>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: colors.text }}>Playlist Tracker</h1>
+            <p style={{ color: colors.secondary, fontSize: '0.9rem' }}>Your personal YouTube learning dashboard</p>
             <div style={s.form}>
-                <input
-                    style={s.input}
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                />
-                <input
-                    style={s.input}
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                />
-                {error && <p style={s.error}>{error}</p>}
-                <button
-                    style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}
-                    onClick={handleLogin}
-                    disabled={loading}
-                >
+                <input style={{ ...s.input, background: colors.inputBg, color: colors.text, border: `1px solid ${colors.border}` }} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+                <input style={{ ...s.input, background: colors.inputBg, color: colors.text, border: `1px solid ${colors.border}` }} type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+                {error && <p style={{ color: '#ee6c4d', fontSize: '0.82rem', textAlign: 'left' }}>{error}</p>}
+                <button style={{ ...s.btn, background: colors.button, opacity: loading ? 0.7 : 1 }} onClick={handleLogin} disabled={loading}>
                     {loading ? 'Signing in...' : 'Sign In'}
                 </button>
             </div>
-
-            <p style={s.switchText}>
+            <p style={{ fontSize: '0.82rem', color: colors.secondary }}>
                 Don't have an account?{' '}
-                <span style={s.switchLink} onClick={onSwitch}>Register</span>
+                <span style={{ color: '#ee6c4d', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }} onClick={onSwitch}>Register</span>
             </p>
         </div>
     )
@@ -213,71 +202,37 @@ function RegisterForm({ onSwitch, colors }) {
     }
 
     if (success) return (
-        <div style={{...s.card, background: colors.card, color: colors.text}}>
-            <div style={s.loginLogo}>✅</div>
-            <h2 style={s.loginTitle}>Account created!</h2>
-            <p style={s.loginSub}>You can now sign in.</p>
-            <button style={s.btn} onClick={onSwitch}>Go to Login</button>
+        <div style={{ ...s.card, background: colors.card }}>
+            <div style={{ fontSize: '2.5rem' }}>✅</div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: colors.text }}>Account created!</h2>
+            <p style={{ color: colors.secondary }}>You can now sign in.</p>
+            <button style={{ ...s.btn, background: colors.button }} onClick={onSwitch}>Go to Login</button>
         </div>
     )
 
     return (
-        <div style={{...s.card, background: colors.card, color: colors.text}}>
-            <div style={s.loginLogo}>📚</div>
-            <h1 style={{...s.loginTitle, color: colors.text}}>Create Account</h1>
-            <p style={{...s.loginSub, color: colors.secondary}}>Start tracking your playlists</p>
-
+        <div style={{ ...s.card, background: colors.card }}>
+            <div style={{ fontSize: '2.5rem' }}>📚</div>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: colors.text }}>Create Account</h1>
+            <p style={{ color: colors.secondary, fontSize: '0.9rem' }}>Start tracking your playlists</p>
             <div style={s.form}>
-                <input
-                    style={{...s.input, background: colors.inputBg, color: colors.text}}
-                    type="text"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                />
-                <input
-                    style={{...s.input, background: colors.inputBg, color: colors.text}}
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                />
-                <input
-                    style={{...s.input, background: colors.inputBg, color: colors.text}}
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleRegister()}
-                />
-                {error && <p style={{...s.error, color: colors.error}}>{error}</p>}
-                <button
-                    style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}
-                    onClick={handleRegister}
-                    disabled={loading}
-                >
+                <input style={{ ...s.input, background: colors.inputBg, color: colors.text, border: `1px solid ${colors.border}` }} type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} />
+                <input style={{ ...s.input, background: colors.inputBg, color: colors.text, border: `1px solid ${colors.border}` }} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+                <input style={{ ...s.input, background: colors.inputBg, color: colors.text, border: `1px solid ${colors.border}` }} type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleRegister()} />
+                {error && <p style={{ color: '#ee6c4d', fontSize: '0.82rem', textAlign: 'left' }}>{error}</p>}
+                <button style={{ ...s.btn, background: colors.button, opacity: loading ? 0.7 : 1 }} onClick={handleRegister} disabled={loading}>
                     {loading ? 'Creating...' : 'Create Account'}
                 </button>
             </div>
-
-            <p style={{...s.switchText, color: colors.text}}>
+            <p style={{ fontSize: '0.82rem', color: colors.secondary }}>
                 Already have an account?{' '}
-                <span style={{...s.switchLink, color: colors.secondary}} onClick={onSwitch}>Sign In</span>
+                <span style={{ color: '#ee6c4d', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }} onClick={onSwitch}>Sign In</span>
             </p>
         </div>
     )
 }
 
-function Empty() {
-    return (
-        <div style={s.empty}>
-            <div style={s.emptyIcon}>🎬</div>
-            <p style={s.emptyText}>Select a playlist from the sidebar to get started</p>
-        </div>
-    )
-}
-
-const themes = {
+export const themes = {
     light: {
         bg: '#e0fbfc',
         card: '#ffffff',
@@ -315,21 +270,32 @@ const themes = {
 }
 
 const s = {
-    center: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#e0fbfc' },
+    layout: { display: 'flex', minHeight: '100vh', position: 'relative' },
+    sidebarWrapper: { width: '300px', flexShrink: 0 },
+    backdrop: {
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        zIndex: 199,
+    },
+    main: { flex: 1, overflowY: 'auto', minHeight: '100vh', position: 'relative' },
+    topBar: {
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px',
+        position: 'sticky', top: 0, zIndex: 100,
+    },
+    hamburger: {
+        background: 'none', border: 'none',
+        fontSize: '1.4rem', cursor: 'pointer', padding: '4px 8px',
+    },
+    themeBtn: {
+        padding: '8px 12px', border: 'none',
+        borderRadius: '10px', cursor: 'pointer', fontSize: '18px',
+        background: 'rgba(128,128,128,0.1)',
+    },
+    center: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' },
     spinner: { width: '36px', height: '36px', border: '3px solid #98c1d9', borderTop: '3px solid #3d5a80', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
-    card: { background: '#fff', borderRadius: '16px', padding: '48px 56px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', boxShadow: '0 4px 24px rgba(61,90,128,0.1)', minWidth: '360px' },
-    loginLogo: { fontSize: '2.5rem' },
-    loginTitle: { fontSize: '1.6rem', fontWeight: 700, color: '#293241' },
-    loginSub: { color: '#3d5a80', fontSize: '0.9rem', marginBottom: '4px' },
+    card: { borderRadius: '16px', padding: '40px 48px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', boxShadow: '0 4px 24px rgba(61,90,128,0.1)', width: '90%', maxWidth: '400px' },
     form: { display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: '8px' },
-    input: { width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1px solid rgba(152,193,217,0.6)', background: '#f8feff', color: '#293241', fontSize: '0.9rem', outline: 'none' },
-    error: { color: '#ee6c4d', fontSize: '0.82rem', textAlign: 'left' },
-    btn: { padding: '12px', borderRadius: '999px', border: 'none', background: '#3d5a80', color: '#fff', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', transition: 'background 0.2s' },
-    switchText: { fontSize: '0.82rem', color: '#3d5a80', marginTop: '4px' },
-    switchLink: { color: '#ee6c4d', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' },
-    layout: { display: 'flex', height: '100vh', overflow: 'hidden' },
-    main: { flex: 1, overflowY: 'auto', padding: '32px', background: '#e0fbfc' },
-    empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '16px' },
-    emptyIcon: { fontSize: '3rem' },
-    emptyText: { color: '#3d5a80', fontSize: '1rem', fontWeight: 500 },
+    input: { width: '100%', padding: '11px 14px', borderRadius: '8px', fontSize: '0.9rem', outline: 'none' },
+    btn: { padding: '12px', borderRadius: '999px', border: 'none', color: '#fff', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer' },
 }
