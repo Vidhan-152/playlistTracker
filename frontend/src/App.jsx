@@ -3,6 +3,7 @@ import axios from './api/client'
 import Sidebar from './components/Sidebar'
 import PlaylistDetail from './components/PlaylistDetail'
 import './App.css'
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
     const [user, setUser] = useState(null)
@@ -131,6 +132,7 @@ export default function App() {
                     <Empty />
                 )}
             </main>
+            <Analytics />
         </div>
     )
 }
