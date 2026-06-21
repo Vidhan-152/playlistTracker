@@ -31,3 +31,10 @@ server:
       cookie:
         same-site: none
         secure: true
+
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
