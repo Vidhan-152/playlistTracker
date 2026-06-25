@@ -38,3 +38,13 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+
+groq:
+  api:
+    key: ${GROQ_API_KEY:${groq.api.key}}
+    base-url: https://api.groq.com/openai/v1
+
+
+transcript:
+  service:
+    url: ${TRANSCRIPT_SERVICE_URL:http://localhost:8000}
