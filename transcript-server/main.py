@@ -1,53 +1,53 @@
 from fastapi import FastAPI, HTTPException
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._ errors import *
+from youtube_transcript_api._errors import (
+    TranscriptsDisabled,
+    NoTranscriptFound,
+)
 
 app = FastAPI()
-ytt_api = YouTubeTranscriptApi()
+
 
 @app.get("/transcript/{video_id}")
-def get_transcript(video_id : str):
+def get_transcript(video_id: str):
     try:
-        transcript = ytt_api.get_transcript(
+        api = YouTubeTranscriptApi()
+
+        transcript = api.fetch(
             video_id,
-            languages=[
-                "en",
-                "en-US",
-                "hi"
-            ]
+            languages=["en", "en-US", "en-GB", "hi"],
         )
 
-        # Only getting text for now (we will also use timestamps later)
-        text = " ".join(
-            entry["text"],
-            for entry in transcript
-        )
+        text = " ".join(snippet.text for snippet in transcript)
 
         return {
-            "video_id": video_id,
-            "transcript": text
+            "videoId": video_id,
+            "transcript": text,
         }
 
     except TranscriptsDisabled:
         raise HTTPException(
             status_code=404,
-            detail="Captios not available"
+            detail="Captions are disabled for this video",
         )
 
     except NoTranscriptFound:
         raise HTTPException(
             status_code=404,
-            detail="No transcripts found"
+            detail="No transcript found for this video",
         )
 
     except Exception as e:
+        message = str(e)
+
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail="this video has policy issues",
         )
+
 
 @app.get("/health")
 def health():
     return {
-        "status" : "OK"
+        "status": "ok",
     }
