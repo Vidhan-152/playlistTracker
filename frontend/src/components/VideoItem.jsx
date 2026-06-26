@@ -1,4 +1,3 @@
-// src/components/VideoItem.jsx
 import { useState } from 'react'
 
 export default function VideoItem({

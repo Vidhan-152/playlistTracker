@@ -1,15 +1,5 @@
-// src/components/AIDrawer.jsx
-// Right-side drawer for AI Notes and AI Chat.
-// Props:
-//   videoId     — currently open video id
-//   videoTitle  — display title for the drawer header
-//   tab         — 'notes' | 'chat'
-//   onTabChange — (tab) => void
-//   onClose     — () => void
-//   colors      — theme color object
-
 import { useState, useEffect, useRef } from 'react'
-import { aiClient as axios } from '../api/client'
+import axios from '../api/client'
 
 const LOADING_STEPS = [
     'Fetching transcript...',

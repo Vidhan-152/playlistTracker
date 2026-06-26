@@ -1,4 +1,3 @@
-// src/components/LandingPage.jsx
 import { useState, useEffect } from 'react'
 
 const CORAL  = '#ee6c4d'
