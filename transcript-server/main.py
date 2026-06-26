@@ -1,9 +1,14 @@
+import logging
+
 from fastapi import FastAPI, HTTPException
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
     TranscriptsDisabled,
     NoTranscriptFound,
 )
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -38,11 +43,10 @@ def get_transcript(video_id: str):
         )
 
     except Exception as e:
-        message = str(e)
-
+        logger.exception("Failed to fetch transcript for video_id=%s", video_id)
         raise HTTPException(
             status_code=500,
-            detail="this video has policy issues",
+            detail=f"this video has policy issues: {type(e).__name__}: {e}",
         )
 
 
