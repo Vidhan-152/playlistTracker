@@ -9,6 +9,7 @@
 //   colors      — theme color object
 
 import { useState, useEffect, useRef } from 'react'
+import { marked } from 'marked'
 import axios from '../api/client'
 
 const LOADING_STEPS = [
@@ -64,7 +65,8 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
         axios.post(`/api/videos/${videoId}/notes/generate`)
             .then(res => {
                 // Backend returns { content: '<markdown string>', generatedAt: '...' }
-                setNotesCache(prev => ({ ...prev, [videoId]: res.data.content }))
+                const html = marked.parse(res.data.content || '')
+                setNotesCache(prev => ({ ...prev, [videoId]: html }))
             })
             .catch(err => setNotesError(err.response?.data?.message || 'Failed to generate notes'))
             .finally(() => setNotesLoading(false))
