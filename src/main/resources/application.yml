@@ -48,3 +48,4 @@ groq:
 transcript:
   service:
     url: ${TRANSCRIPT_SERVICE_URL:http://localhost:8000}
+    secret: ${TRANSCRIPT_SERVICE_SECRET:dev-local-secret}

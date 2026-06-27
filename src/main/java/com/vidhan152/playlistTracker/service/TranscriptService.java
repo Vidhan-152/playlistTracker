@@ -19,12 +19,16 @@ public class TranscriptService {
     @Value("${transcript.service.url}")
     private String transcriptServiceUrl;
 
+    @Value("${transcript.service.secret}")
+    private String transcriptServiceSecret;
+
     public String fetchTranscript(String youtubeVideoId) {
         log.info("Fetching transcript for video: {}", youtubeVideoId);
 
         try {
             Map response = restClient.get()
                     .uri(transcriptServiceUrl + "/transcript/{id}", youtubeVideoId)
+                    .header("X-Transcript-Secret", transcriptServiceSecret)
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
                         throw new IllegalArgumentException("No captions available for video: " + youtubeVideoId);

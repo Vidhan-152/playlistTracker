@@ -1,9 +1,8 @@
 import logging
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.proxies import WebshareProxyConfig
 from youtube_transcript_api._errors import (
     TranscriptsDisabled,
     NoTranscriptFound,
@@ -14,31 +13,27 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-WEBSHARE_PROXY_USERNAME = os.environ.get("WEBSHARE_PROXY_USERNAME")
-WEBSHARE_PROXY_PASSWORD = os.environ.get("WEBSHARE_PROXY_PASSWORD")
+TRANSCRIPT_SERVICE_SECRET = os.environ.get("TRANSCRIPT_SERVICE_SECRET")
 
-if not WEBSHARE_PROXY_USERNAME or not WEBSHARE_PROXY_PASSWORD:
+if not TRANSCRIPT_SERVICE_SECRET:
     logger.warning(
-        "WEBSHARE_PROXY_USERNAME/PASSWORD not set — requests will go out on this "
-        "service's own IP and will likely be blocked by YouTube."
+        "TRANSCRIPT_SERVICE_SECRET is not set — this endpoint will reject all "
+        "requests until it's configured (fails closed for safety)."
     )
 
 
-def build_api() -> YouTubeTranscriptApi:
-    if WEBSHARE_PROXY_USERNAME and WEBSHARE_PROXY_PASSWORD:
-        return YouTubeTranscriptApi(
-            proxy_config=WebshareProxyConfig(
-                proxy_username=WEBSHARE_PROXY_USERNAME,
-                proxy_password=WEBSHARE_PROXY_PASSWORD,
-            )
-        )
-    return YouTubeTranscriptApi()
+def verify_secret(x_transcript_secret: str | None):
+    # Fails closed: if the secret isn't configured at all, nothing gets through.
+    if not TRANSCRIPT_SERVICE_SECRET or x_transcript_secret != TRANSCRIPT_SERVICE_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @app.get("/transcript/{video_id}")
-def get_transcript(video_id: str):
+def get_transcript(video_id: str, x_transcript_secret: str | None = Header(default=None)):
+    verify_secret(x_transcript_secret)
+
     try:
-        api = build_api()
+        api = YouTubeTranscriptApi()
 
         transcript = api.fetch(
             video_id,
