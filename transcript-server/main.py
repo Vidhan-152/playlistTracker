@@ -1,7 +1,9 @@
 import logging
+import os
 
 from fastapi import FastAPI, HTTPException
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import WebshareProxyConfig
 from youtube_transcript_api._errors import (
     TranscriptsDisabled,
     NoTranscriptFound,
@@ -12,11 +14,31 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+WEBSHARE_PROXY_USERNAME = os.environ.get("WEBSHARE_PROXY_USERNAME")
+WEBSHARE_PROXY_PASSWORD = os.environ.get("WEBSHARE_PROXY_PASSWORD")
+
+if not WEBSHARE_PROXY_USERNAME or not WEBSHARE_PROXY_PASSWORD:
+    logger.warning(
+        "WEBSHARE_PROXY_USERNAME/PASSWORD not set — requests will go out on this "
+        "service's own IP and will likely be blocked by YouTube."
+    )
+
+
+def build_api() -> YouTubeTranscriptApi:
+    if WEBSHARE_PROXY_USERNAME and WEBSHARE_PROXY_PASSWORD:
+        return YouTubeTranscriptApi(
+            proxy_config=WebshareProxyConfig(
+                proxy_username=WEBSHARE_PROXY_USERNAME,
+                proxy_password=WEBSHARE_PROXY_PASSWORD,
+            )
+        )
+    return YouTubeTranscriptApi()
+
 
 @app.get("/transcript/{video_id}")
 def get_transcript(video_id: str):
     try:
-        api = YouTubeTranscriptApi()
+        api = build_api()
 
         transcript = api.fetch(
             video_id,
