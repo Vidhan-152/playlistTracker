@@ -9,6 +9,13 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
     const [scrolled, setScrolled]           = useState(false)
     const [hoveredFeature, setHoveredFeature] = useState(null)
     const [openFaq, setOpenFaq]             = useState(null)
+    const [isMobile, setIsMobile]           = useState(() => window.innerWidth < 768)
+
+    useEffect(() => {
+        const fn = () => setIsMobile(window.innerWidth < 768)
+        window.addEventListener('resize', fn)
+        return () => window.removeEventListener('resize', fn)
+    }, [])
 
     useEffect(() => {
         const el = document.getElementById('lp-scroll')
@@ -57,7 +64,7 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
             {/* ── Nav ── */}
             <nav style={{
                 position: 'sticky', top: 0, zIndex: 100,
-                padding: '0 48px', height: '60px',
+                padding: isMobile ? '0 20px' : '0 48px', height: '60px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 background: scrolled
                     ? (theme === 'light' ? 'rgba(240,250,251,0.92)' : 'rgba(13,17,23,0.92)')
@@ -81,18 +88,18 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
             </nav>
 
             {/* ── Hero ── */}
-            <section style={{ padding: '88px 48px 72px', maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'center' }}>
+            <section style={{ padding: isMobile ? '48px 20px 40px' : '88px 48px 72px', maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '40px' : '64px', alignItems: 'center' }}>
                 <div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: c.chip, color: c.chipText, borderRadius: '999px', padding: '5px 14px', fontSize: '0.75rem', fontWeight: 600, marginBottom: '24px', border: `1px solid ${c.borderStrong}` }}>
                         ✨ AI-powered learning — now in beta
                     </div>
-                    <h1 style={{ fontSize: '3.2rem', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.04em', margin: '0 0 20px', color: c.text }}>
+                    <h1 style={{ fontSize: isMobile ? '2.2rem' : '3.2rem', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.04em', margin: '0 0 20px', color: c.text }}>
                         Your AI learning companion for YouTube.
                     </h1>
                     <p style={{ fontSize: '1.05rem', color: c.secondary, lineHeight: 1.75, margin: '0 0 36px', maxWidth: '460px' }}>
                         Track playlists, generate study notes, and chat with your lectures. Built for students who take learning seriously.
                     </p>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <button onClick={onGetStarted} style={{ ...primaryBtn, padding: '13px 32px', fontSize: '0.95rem', boxShadow: '0 4px 20px rgba(61,90,128,0.32)' }}>
                             Get started free
                         </button>
@@ -101,10 +108,21 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
                         </button>
                     </div>
                     <p style={{ marginTop: '14px', fontSize: '0.75rem', color: c.mutedText }}>No credit card required · Free forever for students</p>
+
+                    {/* Mobile: mini stat pills */}
+                    {isMobile && (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '28px' }}>
+                            {[{ icon: '📚', label: '100+ playlists tracked' }, { icon: '🤖', label: 'AI notes in ~2s' }, { icon: '🔥', label: 'Daily streaks' }].map(s => (
+                                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '999px', border: `1px solid ${c.borderStrong}`, background: c.card, fontSize: '0.75rem', fontWeight: 600, color: c.secondary }}>
+                                    {s.icon} {s.label}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                {/* Hero dashboard mockup */}
-                <div style={{ position: 'relative' }}>
+                {/* Hero dashboard mockup — desktop only */}
+                <div style={{ position: 'relative', display: isMobile ? 'none' : 'block' }}>
                     <div style={{ borderRadius: '16px', overflow: 'hidden', border: `1px solid ${c.borderStrong}`, boxShadow: c.cardHoverShadow, background: c.card }}>
                         {/* Window chrome */}
                         <div style={{ padding: '10px 14px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -158,7 +176,7 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
             </section>
 
             {/* ── Powered by ── */}
-            <section style={{ padding: '32px 48px 0', maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
+            <section style={{ padding: isMobile ? '24px 20px 0' : '32px 48px 0', maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
                 <p style={{ fontSize: '0.7rem', fontWeight: 600, color: c.mutedText, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>
                     Powered by
                 </p>
@@ -172,23 +190,23 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
             </section>
 
             {/* ── Features ── */}
-            <section style={{ padding: '88px 48px', maxWidth: '1100px', margin: '0 auto' }}>
+            <section style={{ padding: isMobile ? '56px 20px' : '88px 48px', maxWidth: '1100px', margin: '0 auto' }}>
                 <div style={{ textAlign: 'center', marginBottom: '52px' }}>
-                    <h2 style={{ fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.03em', color: c.text, margin: '0 0 12px' }}>
+                    <h2 style={{ fontSize: isMobile ? '1.7rem' : '2.1rem', fontWeight: 800, letterSpacing: '-0.03em', color: c.text, margin: '0 0 12px' }}>
                         Everything you need to learn faster
                     </h2>
                     <p style={{ fontSize: '0.95rem', color: c.secondary, maxWidth: '480px', margin: '0 auto', lineHeight: 1.7 }}>
                         Built for students who want to squeeze maximum value out of every YouTube lecture.
                     </p>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: isMobile ? '10px' : '14px' }}>
                     {features.map((f, i) => (
                         <div
                             key={i}
                             onMouseEnter={() => setHoveredFeature(i)}
                             onMouseLeave={() => setHoveredFeature(null)}
                             style={{
-                                padding: '26px 22px', borderRadius: '14px',
+                                padding: isMobile ? '18px 14px' : '26px 22px', borderRadius: '14px',
                                 border: `1px solid ${hoveredFeature === i ? c.borderStrong : c.border}`,
                                 background: hoveredFeature === i ? c.card : 'transparent',
                                 boxShadow: hoveredFeature === i ? c.cardHoverShadow : 'none',
@@ -197,28 +215,28 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
                                 cursor: 'default',
                             }}
                         >
-                            <div style={{ fontSize: '1.7rem', marginBottom: '12px' }}>{f.icon}</div>
-                            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: c.text, margin: '0 0 8px' }}>{f.title}</h3>
-                            <p style={{ fontSize: '0.85rem', color: c.secondary, lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
+                            <div style={{ fontSize: isMobile ? '1.3rem' : '1.7rem', marginBottom: '12px' }}>{f.icon}</div>
+                            <h3 style={{ fontSize: isMobile ? '0.82rem' : '0.95rem', fontWeight: 700, color: c.text, margin: '0 0 8px' }}>{f.title}</h3>
+                            <p style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', color: c.secondary, lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
                         </div>
                     ))}
                 </div>
             </section>
 
             {/* ── AI Flow ── */}
-            <section style={{ padding: '0 48px 88px', maxWidth: '1100px', margin: '0 auto' }}>
+            <section style={{ padding: isMobile ? '0 20px 56px' : '0 48px 88px', maxWidth: '1100px', margin: '0 auto' }}>
                 <div style={{ textAlign: 'center', marginBottom: '44px' }}>
-                    <h2 style={{ fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.03em', color: c.text, margin: '0 0 12px' }}>How the AI works</h2>
+                    <h2 style={{ fontSize: isMobile ? '1.7rem' : '2.1rem', fontWeight: 800, letterSpacing: '-0.03em', color: c.text, margin: '0 0 12px' }}>How the AI works</h2>
                     <p style={{ fontSize: '0.95rem', color: c.secondary }}>From raw YouTube video to structured study notes in seconds.</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', gap: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: isMobile ? 'wrap' : 'nowrap', justifyContent: isMobile ? 'center' : 'flex-start', overflowX: isMobile ? 'visible' : 'auto', gap: isMobile ? '10px' : 0 }}>
                     {aiSteps.map((step, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < aiSteps.length - 1 ? 1 : 'none' }}>
-                            <div style={{ padding: '14px 18px', borderRadius: '12px', background: c.card, border: `1px solid ${c.borderStrong}`, textAlign: 'center', minWidth: '110px', boxShadow: c.cardShadow }}>
-                                <div style={{ fontSize: '1.3rem', marginBottom: '6px' }}>{step.icon}</div>
-                                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: c.secondary, whiteSpace: 'nowrap' }}>{step.label}</div>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', flex: (!isMobile && i < aiSteps.length - 1) ? 1 : 'none' }}>
+                            <div style={{ padding: '14px 18px', borderRadius: '12px', background: c.card, border: `1px solid ${c.borderStrong}`, textAlign: 'center', minWidth: isMobile ? '80px' : '110px', boxShadow: c.cardShadow }}>
+                                <div style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', marginBottom: '6px' }}>{step.icon}</div>
+                                <div style={{ fontSize: isMobile ? '0.62rem' : '0.7rem', fontWeight: 600, color: c.secondary, whiteSpace: 'nowrap' }}>{step.label}</div>
                             </div>
-                            {i < aiSteps.length - 1 && (
+                            {!isMobile && i < aiSteps.length - 1 && (
                                 <div style={{ flex: 1, height: '1px', background: c.borderStrong, margin: '0 4px', minWidth: '12px' }}>
                                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: CORAL, margin: '-2.5px auto' }} />
                                 </div>
@@ -229,8 +247,8 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
             </section>
 
             {/* ── FAQ ── */}
-            <section style={{ padding: '0 48px 88px', maxWidth: '720px', margin: '0 auto' }}>
-                <h2 style={{ fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.03em', color: c.text, textAlign: 'center', margin: '0 0 44px' }}>Frequently asked</h2>
+            <section style={{ padding: isMobile ? '0 20px 56px' : '0 48px 88px', maxWidth: '720px', margin: '0 auto' }}>
+                <h2 style={{ fontSize: isMobile ? '1.7rem' : '2.1rem', fontWeight: 800, letterSpacing: '-0.03em', color: c.text, textAlign: 'center', margin: '0 0 44px' }}>Frequently asked</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {faqs.map((f, i) => (
                         <div
@@ -251,11 +269,11 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
             </section>
 
             {/* ── CTA Banner ── */}
-            <section style={{ padding: '0 48px 88px', maxWidth: '1100px', margin: '0 auto' }}>
-                <div style={{ borderRadius: '24px', padding: '64px 48px', textAlign: 'center', background: BLUE, position: 'relative', overflow: 'hidden' }}>
+            <section style={{ padding: isMobile ? '0 20px 56px' : '0 48px 88px', maxWidth: '1100px', margin: '0 auto' }}>
+                <div style={{ borderRadius: '24px', padding: isMobile ? '48px 24px' : '64px 48px', textAlign: 'center', background: BLUE, position: 'relative', overflow: 'hidden' }}>
                     <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
                     <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '160px', height: '160px', borderRadius: '50%', background: 'rgba(238,108,77,0.14)' }} />
-                    <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#fff', margin: '0 0 14px', letterSpacing: '-0.03em', position: 'relative' }}>
+                    <h2 style={{ fontSize: isMobile ? '1.7rem' : '2.2rem', fontWeight: 800, color: '#fff', margin: '0 0 14px', letterSpacing: '-0.03em', position: 'relative' }}>
                         Start learning smarter today
                     </h2>
                     <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.72)', margin: '0 auto 28px', maxWidth: '400px', lineHeight: 1.65, position: 'relative' }}>
@@ -268,7 +286,7 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
             </section>
 
             {/* ── Footer ── */}
-            <footer style={{ padding: '32px 48px', borderTop: `1px solid ${c.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1100px', margin: '0 auto' }}>
+            <footer style={{ padding: isMobile ? '24px 20px' : '32px 48px', borderTop: `1px solid ${c.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1100px', margin: '0 auto' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                     <div style={logo}>▶</div>
                     <span style={{ fontWeight: 800, fontSize: '0.9rem', color: c.text }}>TrackTube</span>
