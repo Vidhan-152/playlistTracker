@@ -12,6 +12,9 @@ import { useState, useEffect, useRef } from 'react'
 import { marked } from 'marked'
 import axios from '../api/client'
 
+// Chat is built but not ready to ship yet — flip to true to bring it back.
+const CHAT_FEATURE_ENABLED = false
+
 const LOADING_STEPS = [
     'Fetching transcript...',
     'Understanding lecture...',
@@ -22,6 +25,11 @@ const LOADING_STEPS = [
 
 export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClose, colors }) {
     const c = colors
+
+    // While chat is flagged off, the drawer is always effectively on 'notes'
+    // regardless of what tab the parent passed in (e.g. a stale 'chat' value
+    // from before the flag was added, or the Chat button in VideoItem).
+    const activeTab = CHAT_FEATURE_ENABLED ? tab : 'notes'
 
     // ── Notes state ──────────────────────────────────────────────────────────
     // notesCache[videoId] = { html, markdown }
@@ -47,10 +55,10 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
     // one via Groq if nothing exists yet. This avoids re-generating (and
     // getting different wording) on every page refresh.
     useEffect(() => {
-        if (tab !== 'notes' || !videoId) return
+        if (activeTab !== 'notes' || !videoId) return
         if (notesCache[videoId]) return   // already loaded this session
         loadNotes()
-    }, [videoId, tab])
+    }, [videoId, activeTab])
 
     // Reset edit mode whenever the active video changes
     useEffect(() => {
@@ -190,27 +198,37 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
             {/* ── Header ── */}
             <div style={{ padding: '14px 18px', borderBottom: `1px solid ${c.border}`, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                        {['notes', 'chat'].map(t => (
-                            <button
-                                key={t}
-                                onClick={() => onTabChange(t)}
-                                style={{
-                                    padding: '6px 14px', borderRadius: '7px', border: 'none',
-                                    background: tab === t ? '#3d5a80' : 'transparent',
-                                    color: tab === t ? '#fff' : c.secondary,
-                                    fontWeight: 600, fontSize: '0.78rem',
-                                    cursor: 'pointer', fontFamily: 'inherit',
-                                    transition: 'all 0.15s',
-                                }}
-                            >
-                                {t === 'notes' ? '📝 AI Notes' : '💬 Chat'}
-                            </button>
-                        ))}
-                    </div>
+                    {CHAT_FEATURE_ENABLED ? (
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            {['notes', 'chat'].map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => onTabChange(t)}
+                                    style={{
+                                        padding: '6px 14px', borderRadius: '7px', border: 'none',
+                                        background: activeTab === t ? '#3d5a80' : 'transparent',
+                                        color: activeTab === t ? '#fff' : c.secondary,
+                                        fontWeight: 600, fontSize: '0.78rem',
+                                        cursor: 'pointer', fontFamily: 'inherit',
+                                        transition: 'all 0.15s',
+                                    }}
+                                >
+                                    {t === 'notes' ? '📝 AI Notes' : '💬 Chat'}
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{
+                            padding: '6px 14px', borderRadius: '7px',
+                            background: '#3d5a80', color: '#fff',
+                            fontWeight: 600, fontSize: '0.78rem',
+                        }}>
+                            📝 AI Notes
+                        </div>
+                    )}
 
                     <div style={{ display: 'flex', gap: '6px' }}>
-                        {tab === 'notes' && currentNote && !notesLoading && !isEditing && (
+                        {activeTab === 'notes' && currentNote && !notesLoading && !isEditing && (
                             <>
                                 <button
                                     onClick={startEditing}
@@ -244,7 +262,7 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
             </div>
 
             {/* ── Notes tab ── */}
-            {tab === 'notes' && (
+            {activeTab === 'notes' && (
                 <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px', display: 'flex', flexDirection: 'column' }}>
                     {notesLoading && (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', height: '200px' }}>
@@ -311,8 +329,8 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
                 </div>
             )}
 
-            {/* ── Chat tab ── */}
-            {tab === 'chat' && (
+            {/* ── Chat tab (flagged off — see CHAT_FEATURE_ENABLED) ── */}
+            {CHAT_FEATURE_ENABLED && activeTab === 'chat' && (
                 <>
                     <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {messages.map((msg, i) => (

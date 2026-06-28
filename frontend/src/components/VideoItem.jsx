@@ -1,4 +1,8 @@
+// src/components/VideoItem.jsx
 import { useState } from 'react'
+
+// Keep in sync with AIDrawer.jsx's CHAT_FEATURE_ENABLED — chat isn't ready yet.
+const CHAT_FEATURE_ENABLED = false
 
 export default function VideoItem({
                                       video, index, onToggle, colors, isMobile,
@@ -117,26 +121,28 @@ export default function VideoItem({
                 </button>
 
                 {/* Chat */}
-                <button
-                    onClick={() => onOpenChat(video.id, video.title)}
-                    onMouseEnter={() => setHoveredBtn('chat')}
-                    onMouseLeave={() => setHoveredBtn(null)}
-                    style={{
-                        padding: isMobile ? '5px 10px' : '7px 14px',
-                        borderRadius: '8px',
-                        border: `1px solid ${hoveredBtn === 'chat' ? '#3d5a80' : c.border}`,
-                        background: hoveredBtn === 'chat' ? '#3d5a80' : 'transparent',
-                        color: hoveredBtn === 'chat' ? '#fff' : c.secondary,
-                        fontWeight: 600,
-                        fontSize: isMobile ? '0.72rem' : '0.78rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        whiteSpace: 'nowrap',
-                        fontFamily: 'inherit',
-                    }}
-                >
-                    {isMobile ? '💬' : '💬 Chat'}
-                </button>
+                {CHAT_FEATURE_ENABLED && (
+                    <button
+                        onClick={() => onOpenChat(video.id, video.title)}
+                        onMouseEnter={() => setHoveredBtn('chat')}
+                        onMouseLeave={() => setHoveredBtn(null)}
+                        style={{
+                            padding: isMobile ? '5px 10px' : '7px 14px',
+                            borderRadius: '8px',
+                            border: `1px solid ${hoveredBtn === 'chat' ? '#3d5a80' : c.border}`,
+                            background: hoveredBtn === 'chat' ? '#3d5a80' : 'transparent',
+                            color: hoveredBtn === 'chat' ? '#fff' : c.secondary,
+                            fontWeight: 600,
+                            fontSize: isMobile ? '0.72rem' : '0.78rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                            whiteSpace: 'nowrap',
+                            fontFamily: 'inherit',
+                        }}
+                    >
+                        {isMobile ? '💬' : '💬 Chat'}
+                    </button>
+                )}
             </div>
         </div>
     )
