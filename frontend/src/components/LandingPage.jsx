@@ -228,29 +228,6 @@ export default function LandingPage({ colors, theme, onToggleTheme, onGetStarted
                 </div>
             </section>
 
-            {/* ── Testimonials ── */}
-            <section style={{ padding: '0 48px 88px', maxWidth: '1100px', margin: '0 auto' }}>
-                <h2 style={{ fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.03em', color: c.text, textAlign: 'center', margin: '0 0 48px' }}>Students love it</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-                    {[
-                        { name: 'Aryan M.',  role: 'CS, IIT Bombay',    text: 'TrackTube replaced my entire manual note-taking workflow. AI Notes from Striver videos are surprisingly accurate.' },
-                        { name: 'Priya K.',  role: 'Final Year, NIT',   text: 'The streak system kept me consistent during placements prep. 67 days and counting.' },
-                        { name: 'Rohan S.',  role: 'B.Tech, BITS',      text: 'Being able to chat with a lecture transcript is wild. I asked it to explain quicksort simply and it just worked.' },
-                    ].map((t, i) => (
-                        <div key={i} style={{ padding: '22px', borderRadius: '14px', background: c.card, border: `1px solid ${c.border}`, boxShadow: c.cardShadow }}>
-                            <p style={{ fontSize: '0.875rem', color: c.secondary, lineHeight: 1.7, margin: '0 0 18px' }}>"{t.text}"</p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>{t.name[0]}</div>
-                                <div>
-                                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: c.text }}>{t.name}</div>
-                                    <div style={{ fontSize: '0.7rem', color: c.mutedText }}>{t.role}</div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
             {/* ── FAQ ── */}
             <section style={{ padding: '0 48px 88px', maxWidth: '720px', margin: '0 auto' }}>
                 <h2 style={{ fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.03em', color: c.text, textAlign: 'center', margin: '0 0 44px' }}>Frequently asked</h2>
