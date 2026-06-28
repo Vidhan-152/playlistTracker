@@ -24,10 +24,14 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
     const c = colors
 
     // ── Notes state ──────────────────────────────────────────────────────────
-    const [notesCache, setNotesCache]   = useState({})   // videoId → html string
+    // notesCache[videoId] = { html, markdown }
+    const [notesCache, setNotesCache]   = useState({})
     const [notesLoading, setNotesLoading] = useState(false)
     const [notesError, setNotesError]   = useState(null)
     const [loadingStep, setLoadingStep] = useState(0)
+    const [isEditing, setIsEditing]     = useState(false)
+    const [editValue, setEditValue]     = useState('')
+    const [saving, setSaving]           = useState(false)
 
     // ── Chat state ───────────────────────────────────────────────────────────
     const [messages, setMessages]       = useState([
@@ -38,12 +42,20 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
     const [chatError, setChatError]     = useState(null)
     const chatEndRef                    = useRef(null)
 
-    // ── Fetch notes when video changes or tab switches to notes ──────────────
+    // ── Load notes when video changes or tab switches to notes ───────────────
+    // Always check for an existing saved note first; only generate a fresh
+    // one via Groq if nothing exists yet. This avoids re-generating (and
+    // getting different wording) on every page refresh.
     useEffect(() => {
         if (tab !== 'notes' || !videoId) return
-        if (notesCache[videoId]) return   // already fetched
-        fetchNotes()
+        if (notesCache[videoId]) return   // already loaded this session
+        loadNotes()
     }, [videoId, tab])
+
+    // Reset edit mode whenever the active video changes
+    useEffect(() => {
+        setIsEditing(false)
+    }, [videoId])
 
     // Animate loading step text
     useEffect(() => {
@@ -59,17 +71,93 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, chatLoading])
 
-    function fetchNotes() {
+    function setNote(markdown) {
+        const html = marked.parse(markdown || '')
+        setNotesCache(prev => ({ ...prev, [videoId]: { html, markdown } }))
+    }
+
+    function loadNotes() {
+        setNotesLoading(true)
+        setNotesError(null)
+        axios.get(`/api/videos/${videoId}/notes`)
+            .then(res => {
+                if (res.status === 200 && res.data?.content) {
+                    setNote(res.data.content)
+                    setNotesLoading(false)
+                } else {
+                    generateNotes()
+                }
+            })
+            .catch(() => {
+                // 204 No Content or any error here -> nothing saved yet, generate fresh
+                generateNotes()
+            })
+    }
+
+    function generateNotes() {
         setNotesLoading(true)
         setNotesError(null)
         axios.post(`/api/videos/${videoId}/notes/generate`)
-            .then(res => {
-                // Backend returns { content: '<markdown string>', generatedAt: '...' }
-                const html = marked.parse(res.data.content || '')
-                setNotesCache(prev => ({ ...prev, [videoId]: html }))
-            })
+            .then(res => setNote(res.data.content))
             .catch(err => setNotesError(err.response?.data?.message || 'Failed to generate notes'))
             .finally(() => setNotesLoading(false))
+    }
+
+    function startEditing() {
+        setEditValue(notesCache[videoId]?.markdown || '')
+        setIsEditing(true)
+    }
+
+    function cancelEditing() {
+        setIsEditing(false)
+    }
+
+    function saveEdit() {
+        setSaving(true)
+        axios.put(`/api/videos/${videoId}/notes`, { content: editValue })
+            .then(res => {
+                setNote(res.data.content)
+                setIsEditing(false)
+            })
+            .catch(err => setNotesError(err.response?.data?.message || 'Failed to save notes'))
+            .finally(() => setSaving(false))
+    }
+
+    function printNotes() {
+        const html = notesCache[videoId]?.html
+        if (!html) return
+        const printWindow = window.open('', '_blank')
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>${(videoTitle || 'Notes').replace(/</g, '&lt;')}</title>
+                <style>
+                    body { font-family: 'Inter', system-ui, sans-serif; padding: 32px; max-width: 760px; margin: 0 auto; color: #111; line-height: 1.6; }
+                    h1, h2, h3 { font-weight: 700; margin: 24px 0 10px; }
+                    h1 { font-size: 1.4rem; }
+                    h2 { font-size: 1.15rem; }
+                    h3 { font-size: 1rem; }
+                    p { margin-bottom: 12px; }
+                    ul, ol { padding-left: 20px; margin-bottom: 14px; }
+                    li { margin-bottom: 4px; }
+                    code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; }
+                    pre { background: #f0f0f0; padding: 14px; border-radius: 8px; overflow-x: auto; }
+                    blockquote { border-left: 3px solid #3d5a80; padding: 10px 14px; background: #f7f7f7; }
+                    @media print {
+                        body { padding: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1 style="border-bottom: 2px solid #3d5a80; padding-bottom: 10px;">${(videoTitle || '').replace(/</g, '&lt;')}</h1>
+                ${html}
+            </body>
+            </html>
+        `)
+        printWindow.document.close()
+        printWindow.focus()
+        setTimeout(() => printWindow.print(), 250)
     }
 
     function sendChat() {
@@ -87,6 +175,8 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
             })
             .finally(() => setChatLoading(false))
     }
+
+    const currentNote = notesCache[videoId]
 
     return (
         <div style={{
@@ -118,12 +208,33 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
                             </button>
                         ))}
                     </div>
-                    <button
-                        onClick={onClose}
-                        style={{ background: 'none', border: `1px solid ${c.border}`, borderRadius: '7px', padding: '5px 9px', cursor: 'pointer', fontSize: '13px', color: c.secondary, fontFamily: 'inherit' }}
-                    >
-                        ✕
-                    </button>
+
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                        {tab === 'notes' && currentNote && !notesLoading && !isEditing && (
+                            <>
+                                <button
+                                    onClick={startEditing}
+                                    title="Edit notes"
+                                    style={{ background: 'none', border: `1px solid ${c.border}`, borderRadius: '7px', padding: '5px 9px', cursor: 'pointer', fontSize: '13px', color: c.secondary, fontFamily: 'inherit' }}
+                                >
+                                    ✏️
+                                </button>
+                                <button
+                                    onClick={printNotes}
+                                    title="Print / Save as PDF"
+                                    style={{ background: 'none', border: `1px solid ${c.border}`, borderRadius: '7px', padding: '5px 9px', cursor: 'pointer', fontSize: '13px', color: c.secondary, fontFamily: 'inherit' }}
+                                >
+                                    🖨️
+                                </button>
+                            </>
+                        )}
+                        <button
+                            onClick={onClose}
+                            style={{ background: 'none', border: `1px solid ${c.border}`, borderRadius: '7px', padding: '5px 9px', cursor: 'pointer', fontSize: '13px', color: c.secondary, fontFamily: 'inherit' }}
+                        >
+                            ✕
+                        </button>
+                    </div>
                 </div>
                 {videoTitle && (
                     <p style={{ fontSize: '0.75rem', color: c.metaText, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -134,7 +245,7 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
 
             {/* ── Notes tab ── */}
             {tab === 'notes' && (
-                <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px' }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px', display: 'flex', flexDirection: 'column' }}>
                     {notesLoading && (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', height: '200px' }}>
                             <div style={{ width: '28px', height: '28px', border: `3px solid ${c.progressTrack}`, borderTop: `3px solid #3d5a80`, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -150,17 +261,51 @@ export default function AIDrawer({ videoId, videoTitle, tab, onTabChange, onClos
                         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                             <div style={{ fontSize: '1.5rem', marginBottom: '10px' }}>⚠️</div>
                             <p style={{ fontSize: '0.85rem', color: '#ee6c4d', marginBottom: '14px' }}>{notesError}</p>
-                            <button onClick={fetchNotes} style={{ padding: '8px 20px', borderRadius: '999px', background: '#3d5a80', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                            <button onClick={generateNotes} style={{ padding: '8px 20px', borderRadius: '999px', background: '#3d5a80', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>
                                 Retry
                             </button>
                         </div>
                     )}
 
-                    {!notesLoading && !notesError && notesCache[videoId] && (
+                    {!notesLoading && !notesError && isEditing && (
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '10px' }}>
+                            <textarea
+                                value={editValue}
+                                onChange={e => setEditValue(e.target.value)}
+                                style={{
+                                    flex: 1, minHeight: '400px', resize: 'vertical',
+                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                    fontSize: '0.8rem', lineHeight: 1.6,
+                                    padding: '12px', borderRadius: '8px',
+                                    border: `1px solid ${c.border}`,
+                                    background: c.inputBg, color: c.text,
+                                    outline: 'none',
+                                }}
+                            />
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                <button
+                                    onClick={cancelEditing}
+                                    disabled={saving}
+                                    style={{ padding: '8px 16px', borderRadius: '999px', border: `1px solid ${c.border}`, background: 'transparent', color: c.text, fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={saveEdit}
+                                    disabled={saving}
+                                    style={{ padding: '8px 16px', borderRadius: '999px', border: 'none', background: '#3d5a80', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', opacity: saving ? 0.6 : 1, fontFamily: 'inherit' }}
+                                >
+                                    {saving ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {!notesLoading && !notesError && !isEditing && currentNote && (
                         <div
                             className="ai-notes-content"
                             style={{ fontSize: '0.85rem', color: c.text, lineHeight: 1.75 }}
-                            dangerouslySetInnerHTML={{ __html: notesCache[videoId] }}
+                            dangerouslySetInnerHTML={{ __html: currentNote.html }}
                         />
                     )}
                 </div>

@@ -78,6 +78,23 @@ public class NoteService {
         return noteRepository.findByVideoId(videoId);
     }
 
+    public Note updateNotes(Long videoId, String newContent, User user) {
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow(() -> new EntityNotFoundException("Video not found"));
+
+        if (!video.getPlaylist().getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You do not have access to this video");
+        }
+
+        Note note = noteRepository.findByVideoId(videoId)
+                .orElseThrow(() -> new IllegalArgumentException("No notes exist yet for this video"));
+
+        note.setContent(newContent);
+        Note saved = noteRepository.save(note);
+        log.info("Notes manually updated for video [id={}]", videoId);
+        return saved;
+    }
+
     private String callGroq(String playlistName,String videoTitle, String transcript) {
         log.info("Calling Groq API for note generation");
 

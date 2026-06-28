@@ -43,4 +43,23 @@ public class NoteController {
                 )))
                 .orElse(ResponseEntity.noContent().build());
     }
+
+    @PutMapping("/{id}/notes")
+    public ResponseEntity<?> updateNotes(@PathVariable Long id,
+                                         @RequestBody Map<String, String> body,
+                                         @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            String content = body.get("content");
+            if (content == null || content.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Content cannot be empty"));
+            }
+            Note note = noteService.updateNotes(id, content, currentUserResolver.resolve(userDetails));
+            return ResponseEntity.ok(Map.of(
+                    "content", note.getContent(),
+                    "generatedAt", note.getGeneratedAt().toString()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }
